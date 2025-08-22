@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { APIEndpoint, APIStatus, ResponseRecord } from '@/types/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
 export function useApiMonitor() {
@@ -10,7 +10,7 @@ export function useApiMonitor() {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [interval, setInterval] = useState(10000);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | number | null>(null);
   const activeRequestsRef = useRef<Set<string>>(new Set());
 
   // Função para fazer check de uma API individual
@@ -222,7 +222,7 @@ export function useApiMonitor() {
         createdAt: new Date(),
       };
 
-      setApis((prev: APIEndpoint[]) => [...prev, newAPI]);
+      setApis([...apis, newAPI]);
       console.log(`➕ API adicionada: ${newAPI.name}`);
 
       // Fazer check inicial se monitoramento estiver ativo
@@ -230,14 +230,16 @@ export function useApiMonitor() {
         setTimeout(() => checkSingleAPI(newAPI), 1000);
       }
     },
-    [setApis, isMonitoring, checkSingleAPI]
+    [apis, setApis, isMonitoring, checkSingleAPI]
   );
 
   // Remover API
   const removeAPI = useCallback(
     (apiId: string) => {
       const api = apis.find(a => a.id === apiId);
-      setApis((prev: APIEndpoint[]) => prev.filter(api => api.id !== apiId));
+
+      setApis(apis.filter(api => api.id !== apiId));
+
       setStatuses(prev => {
         const newStatuses = new Map(prev);
         newStatuses.delete(apiId);
@@ -285,15 +287,15 @@ export function useApiMonitor() {
       // Check inicial
       checkAllAPIs();
 
-      // Configurar intervalo
-      intervalRef.current = setInterval(() => {
+      // Configurar intervalo usando window.setInterval para evitar conflito
+      intervalRef.current = window.setInterval(() => {
         checkAllAPIs();
       }, interval);
     }
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
@@ -303,7 +305,7 @@ export function useApiMonitor() {
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
       }
       activeRequestsRef.current.clear();
     };

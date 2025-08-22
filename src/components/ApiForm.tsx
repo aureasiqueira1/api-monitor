@@ -80,7 +80,7 @@ export function ApiForm({ onAdd }: ApiFormProps) {
                 onChange={e =>
                   setFormData(prev => ({
                     ...prev,
-                    method: e.target.value as 'GET' | 'POST' | 'PUT' | 'DELETE',
+                    method: e.target.value as 'GET',
                   }))
                 }
                 className="w-full p-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:outline-none transition-colors"
